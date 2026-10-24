@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metro Station Register — Design preview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #f3f6f7;
+      --surface: #fff;
+      --ink: #1d2b33;
+      --muted: #73828a;
+      --line: #e2e9eb;
+      --nav: #142a32;
+      --nav-muted: #9aafb6;
+      --teal: #07847a;
+      --teal-soft: #e6f5f2;
+      --blue-soft: #edf2fc;
+      --amber-soft: #fff4df;
+      --shadow: 0 8px 22px rgba(24, 46, 54, .045);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font: 13px/1.45 "Segoe UI", Arial, sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    .shell { display: flex; min-height: 100vh; }
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 2; display: flex; width: 236px; flex-direction: column; padding: 22px 14px 16px; background: var(--nav); color: #f7fafa; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 2px 10px 27px; }
+    .brand-mark { display: grid; width: 35px; height: 35px; place-items: center; border-radius: 10px; background: #118e83; color: #fff; font-size: 17px; font-weight: 800; }
+    .brand-title { font-size: 13px; font-weight: 700; }
+    .brand-sub { color: #9bb0b6; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+    .nav-label { padding: 8px 10px; color: #8299a1; font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .nav-list { display: grid; gap: 3px; }
+    .nav-link { display: flex; min-height: 39px; align-items: center; gap: 11px; padding: 0 10px; border-radius: 7px; color: var(--nav-muted); font-size: 12px; }
+    .nav-link:hover, .nav-link.active { background: #203c44; color: #fff; }
+    .nav-link.active { box-shadow: inset 3px 0 #42c8b7; }
+    .nav-icon { display: grid; width: 18px; place-items: center; font-size: 14px; }
+    .nav-rule { height: 1px; margin: 17px 8px 10px; background: #2c4148; }
+    .station-box { margin-top: auto; padding: 12px; border: 1px solid #304a51; border-radius: 9px; background: #1c343c; }
+    .station-caption { color: #94abb2; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .station-name { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; font-weight: 650; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #52d2a0; }
+    .main { width: calc(100% - 236px); margin-left: 236px; }
+    .topbar { display: flex; min-height: 62px; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 1px solid var(--line); background: var(--surface); }
+    .breadcrumbs { color: var(--muted); font-size: 11px; }
+    .breadcrumbs strong { color: var(--ink); }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .sync-label { display: flex; align-items: center; gap: 7px; color: #47776d; font-size: 10px; }
+    .sync-label .dot { width: 6px; height: 6px; }
+    .date-input, .theme-button { min-height: 32px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font-size: 10px; }
+    .theme-button { cursor: pointer; }
+    .avatar { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 50%; background: #e8f3f0; color: #28786d; font-size: 9px; font-weight: 700; }
+    .content { max-width: 1460px; margin: 0 auto; padding: 27px 30px 42px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
+    .eyebrow { margin: 0 0 4px; color: var(--teal); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: 23px; font-weight: 680; letter-spacing: -.035em; }
+    h2 { margin: 0; font-size: 13px; font-weight: 680; }
+    .subhead { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .date-badge, .soft-tag { padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: #50636c; font-size: 10px; }
+    .panel, .stat-card, .history-card { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+    .panel:hover, .stat-card:hover, .history-card:hover { transform: translateY(-2px); border-color: #b7d9d4; box-shadow: 0 13px 28px rgba(27, 72, 72, .09); }
+    .overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; }
+    .stat-card { min-height: 111px; padding: 14px; }
+    .stat-label { color: #677980; font-size: 10px; }
+    .stat-value { margin-top: 11px; font-size: 20px; font-weight: 700; letter-spacing: -.04em; }
+    .stat-foot { margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .change { display: inline-flex; align-items: center; gap: 3px; margin-top: 7px; font-size: 9px; font-weight: 650; }
+    .change.up { color: #16806f; }
+    .change.down { color: #b85d55; }
+    .section-row { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 10px; }
+    .section-note { color: var(--muted); font-size: 9px; }
+    .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+    .quick-card { padding: 14px; cursor: pointer; }
+    .quick-card strong { display: block; font-size: 11px; }
+    .quick-card span { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(280px, 1.1fr) minmax(260px, .95fr) minmax(280px, 1fr); align-items: start; gap: 12px; }
+    .dashboard-stack { display: grid; gap: 12px; }
+    .dash-card { padding: 14px; }
+    .dash-card h2 { margin-bottom: 9px; }
+    .dash-caption { margin: -4px 0 9px; color: var(--muted); font-size: 9px; }
+    .cash-total { margin: 2px 0 11px; color: var(--blue, #557ac7); font-size: 24px; font-weight: 750; letter-spacing: -.04em; }
+    .summary-line { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .summary-line strong { color: var(--ink); font-size: 10px; font-weight: 650; }
+    .bank-section { margin-top: 13px; padding: 12px; border: 1px solid #d6e8e5; border-radius: 8px; background: #f8fbfb; transition: box-shadow .16s ease, border-color .16s ease; }
+    .bank-section:hover { border-color: #b7d9d4; box-shadow: 0 7px 17px rgba(27, 72, 72, .07); }
+    .bank-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+    .bank-section-head h3 { margin: 0; font-size: 11px; }
+    .bank-table, .mini-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 9px; }
+    .bank-table th, .bank-table td, .mini-table th, .mini-table td { min-width: 0; padding: 6px 5px; border: 1px solid var(--line); text-align: right; }
+    .bank-table th:first-child, .bank-table td:first-child, .mini-table th:first-child, .mini-table td:first-child { text-align: left; }
+    .bank-table th, .mini-table th { background: #e9f2f1; color: #365d5b; font-weight: 650; }
+    .bank-table tfoot td, .mini-table tfoot td { background: #edf5f3; color: #255e57; font-weight: 700; }
+    .bank-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 9px; }
+    .bank-status { color: #61757c; font-size: 9px; }
+    .denom-table td:nth-child(2) { width: 48px; text-align: center; }
+    .coins-card { grid-column: 1 / -1; }
+    .sv2-card { grid-column: 1 / -1; }
+    .match-status { margin-top: 9px; color: #16806f; font-size: 9px; font-weight: 650; }
+    .imprest-total { margin-top: 9px; color: var(--teal); font-size: 10px; font-weight: 700; }
+    .outstanding-card { grid-column: 1 / -1; }
+    .outstanding-input { width: 92px; min-height: 28px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--ink); text-align: right; }
+    .outstanding-input:focus { border-color: #55aaa0; outline: 2px solid rgba(44, 151, 140, .12); }
+    .outstanding-total { color: var(--teal); font-weight: 750; }
+    .table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 9px; }
+    .toolbar-note { color: var(--muted); font-size: 9px; }
+    .table-navigation-note { margin: -8px 0 11px; color: var(--muted); font-size: 9px; }
+    .primary-button { min-height: 32px; padding: 7px 11px; border: 0; border-radius: 7px; background: var(--teal); color: #fff; font-size: 10px; font-weight: 650; cursor: pointer; }
+    .primary-button:hover { background: #066e67; }
+    .table-panel { overflow: hidden; padding: 8px; }
+    .table-scroll { overflow: auto; max-width: 100%; padding: 10px; }
+    table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 9px; }
+    th, td { min-width: 75px; padding: 6px 7px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+    th { background: #e7f1f0; color: #315b59; font-size: 9px; font-weight: 700; }
+    table thead tr:first-child th { font-size: 10px; font-weight: 800; }
+    .table-panel thead tr:first-child th { position: sticky; top: 0; z-index: 1; padding: 8px 7px; font-size: 11px; font-weight: 800; line-height: 1.3; }
+    .table-panel thead tr:nth-child(2) th { position: sticky; top: 32px; z-index: 1; background: #eef5f4; }
+    .table-panel thead tr:nth-child(3) th { position: sticky; top: 56px; z-index: 1; background: #f5f8f8; }
+    .table-panel thead tr:nth-child(4) th { position: sticky; top: 80px; z-index: 1; background: #f5f8f8; }
+    .table-panel thead tr:nth-child(5) th { position: sticky; top: 104px; z-index: 1; background: #f5f8f8; }
+    .table-panel table, .bank-table, .mini-table { border-radius: 7px; box-shadow: 0 5px 15px rgba(22, 49, 56, .10); }
+    th[rowspan] { vertical-align: middle; }
+    td { background: var(--surface); }
+    tbody tr:hover td { background: var(--teal-soft); }
+    td input { width: 78px; min-height: 28px; padding: 4px 5px; border: 1px solid transparent; border-radius: 4px; outline: none; background: transparent; color: var(--ink); text-align: right; font-size: 9px; }
+    td input.text-cell { width: 105px; text-align: left; }
+    td input:focus { border-color: #55aaa0; background: var(--surface); box-shadow: 0 0 0 2px rgba(44, 151, 140, .1); }
+    .table-scroll input:focus { position: relative; z-index: 2; outline: 2px solid rgba(44, 151, 140, .38); outline-offset: 1px; }
+    .calc-cell { color: var(--teal); font-weight: 700; }
+    tfoot td { position: sticky; bottom: 0; z-index: 1; background: #edf5f3; color: #255e57; font-weight: 700; }
+    #final-table tfoot td { padding: 13px 10px; font-size: 14px; font-weight: 800; }
+    #final-table tfoot td:last-child { font-size: 16px; }
+    .read-only-banner { margin: 0 0 10px; padding: 9px 11px; border: 1px solid #dce8f6; border-radius: 7px; background: var(--blue-soft); color: #486491; font-size: 10px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; }
+    .history-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .history-card { padding: 16px; }
+    .history-label { color: #667980; font-size: 10px; }
+    .history-value { margin-top: 7px; font-size: 20px; font-weight: 700; }
+    .history-date { margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .support-panel { max-width: 720px; padding: 18px; }
+    .support-panel p { color: var(--muted); font-size: 11px; }
+    .support-callout { padding: 12px; border-radius: 8px; background: var(--teal-soft); color: #366c65; font-size: 10px; }
+    .footer { margin-top: 22px; color: #95a2a7; font-size: 9px; text-align: center; }
+    body.dark {
+      color-scheme: dark;
+      --canvas: #111b1f; --surface: #19262b; --ink: #e9f0f1; --muted: #9aa9ae; --line: #2a393e;
+      --nav: #0f1a1f; --nav-muted: #9aafb6; --teal-soft: #183a37; --blue-soft: #202f48; --amber-soft: #3e351f;
+      --shadow: 0 8px 22px rgba(0, 0, 0, .12);
+    }
+    body.dark th { background: #243b3b; color: #b6d5d0; }
+    body.dark thead tr:nth-child(2) th { background: #203433; }
+    body.dark thead tr:nth-child(3) th { background: #1c302f; }
+    body.dark thead tr:nth-child(4) th, body.dark thead tr:nth-child(5) th { background: #1c302f; }
+    body.dark tfoot td { background: #203633; color: #a8d9d0; }
+    body.dark .read-only-banner { border-color: #304259; }
+    body.dark .bank-section { border-color: #2d4846; background: #1b2a2f; }
+    body.dark .stat-label { color: #bdc9cc; }
+    @media (max-width: 1050px) {
+      .sidebar { width: 205px; }
+      .main { width: calc(100% - 205px); margin-left: 205px; }
+      .content { padding-right: 20px; padding-left: 20px; }
+      .topbar { padding-right: 20px; padding-left: 20px; }
+      .overview-grid, .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dashboard-grid { grid-template-columns: 1fr 1fr; }
+      .dashboard-stack { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      .sidebar { position: static; width: 55px; flex: 0 0 55px; padding: 13px 6px; }
+      .brand { justify-content: center; padding: 2px 0 20px; }
+      .brand-copy, .nav-label, .nav-text, .nav-rule, .station-box { display: none; }
+      .nav-link { justify-content: center; padding: 0; }
+      .main { width: calc(100% - 55px); margin-left: 0; }
+      .topbar { min-height: 56px; padding: 0 12px; }
+      .content { padding: 20px 12px 30px; }
+      .sync-label span:last-child, .avatar { display: none; }
+      .quick-grid, .history-grid { grid-template-columns: 1fr; }
+      .dashboard-grid, .dashboard-stack { grid-template-columns: 1fr; }
+      .dashboard-stack { grid-column: auto; }
+      .page-head { align-items: flex-start; flex-direction: column; }
+      .date-badge { align-self: flex-start; }
+    }
+    @media (max-width: 430px) {
+      .overview-grid, .stats-grid { gap: 7px; }
+      .stat-card { min-height: 100px; padding: 10px; }
+      .stat-value { font-size: 17px; }
+      .theme-button { padding: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#overview" data-page="overview"><span class="brand-mark">M</span><span class="brand-copy"><span class="brand-title">Metro Register</span><br><span class="brand-sub">Station earnings</span></span></a>
+      <div class="nav-label">Station workspace</div>
+      <nav class="nav-list">
+        <a class="nav-link active" href="#dashboard" data-page="dashboard"><span class="nav-icon">▦</span><span class="nav-text">Dashboard</span></a>
+        <a class="nav-link" href="#overview" data-page="overview"><span class="nav-icon">⌂</span><span class="nav-text">Station Overview</span></a>
+        <a class="nav-link" href="#tom-cc" data-page="tom-cc"><span class="nav-icon">▦</span><span class="nav-text">TOM &amp; CC Earning</span></a>
+        <a class="nav-link" href="#tvm" data-page="tvm"><span class="nav-icon">▤</span><span class="nav-text">TVM Earning</span></a>
+        <a class="nav-link" href="#final" data-page="final"><span class="nav-icon">✓</span><span class="nav-text">Final Earning</span></a>
+        <a class="nav-link" href="#statistics" data-page="statistics"><span class="nav-icon">▥</span><span class="nav-text">Statistics</span></a>
+        <a class="nav-link" href="#history" data-page="history"><span class="nav-icon">↗</span><span class="nav-text">Historical Records</span></a>
+      </nav>
+      <div class="nav-rule"></div>
+      <div class="nav-label">Help</div>
+      <nav class="nav-list"><a class="nav-link" href="#support" data-page="support"><span class="nav-icon">?</span><span class="nav-text">Support</span></a></nav>
+      <div class="station-box"><div class="station-caption">Active station</div>      <div class="station-name"><span data-station-name>Central Metro</span><span class="dot"></span></div></div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumbs">Metro Register&nbsp; / &nbsp;<strong id="breadcrumb">Dashboard</strong></div>
+        <div class="top-actions">
+          <label class="sync-label"><span class="dot"></span><span>Local register ready</span></label>
+          <input class="date-input" type="date" value="2026-10-24" aria-label="Selected business date">
+          <button id="theme-toggle" class="theme-button" type="button">◐ Theme</button>
+          <span class="avatar" title="Local operator">OP</span>
+        </div>
+      </header>
+      <div class="content">
+        <section class="page active" id="page-dashboard" aria-labelledby="dashboard-title">
+          <div class="page-head"><div><p class="eyebrow">Daily cash control</p><h1 id="dashboard-title">Dashboard</h1><p class="subhead">Cash position, bank deposit and TOM imprest for the selected business date.</p></div><span class="date-badge">24 October 2026</span></div>
+          <p class="table-navigation-note">Keyboard in editable tables: arrow keys move between cells, Enter moves down, and Tab / Shift+Tab moves through editable cells.</p>
+          <div class="dashboard-grid">
+            <article class="panel dash-card">
+              <h2>Cash on hand</h2>
+              <p class="dash-caption">Unsent previous days + current day + TOM advances + paid outstanding</p>
+              <div class="cash-total" data-cash-total>₹ 0</div>
+              <div class="summary-line"><span>Previous days cash not yet sent</span><strong data-cash-value="previousDaysCash">₹ 0</strong></div>
+              <div class="summary-line"><span>Current day earning</span><strong data-cash-value="currentDayEarning">₹ 0</strong></div>
+              <div class="summary-line"><span>Advance received from TOMs</span><strong data-cash-value="advanceReceived">₹ 0</strong></div>
+              <div class="summary-line"><span>Paid outstanding received</span><strong data-cash-value="paidOutstanding">₹ 0</strong></div>
+              <div class="bank-section">
+                <div class="bank-section-head"><h3>Cash to bank</h3><button class="soft-tag" type="button">Auto calculate</button></div>
+                <table class="bank-table" id="bank-table" aria-label="Cash to bank denominations">
+                  <thead><tr><th>Note</th><th>Count</th><th>Amount</th></tr></thead><tbody></tbody><tfoot></tfoot>
+                </table>
+                <div class="summary-line"><span>Sent to bank today</span><strong data-cash-value="sentToBank">₹ 0</strong></div>
+                <div class="summary-line"><span>Due to bank · rounded down to ₹100</span><strong data-cash-value="dueToBank">₹ 0</strong></div>
+                <div class="bank-actions"><span class="bank-status" data-bank-status></span><button class="primary-button" data-send-bank type="button">Send to bank</button></div>
+              </div>
+            </article>
+
+            <article class="panel dash-card">
+              <h2>Cash in possession</h2>
+              <p class="dash-caption">Count notes and reconcile against cash on hand. Bank-received coins are listed separately below.</p>
+              <table class="mini-table denom-table" id="possession-table" aria-label="Cash in possession by denomination">
+                <thead><tr><th>Note / coin</th><th>Count</th><th>Amount</th></tr></thead><tbody></tbody><tfoot></tfoot>
+              </table>
+              <div class="match-status" data-possession-status></div>
+            </article>
+
+            <div class="dashboard-stack">
+              <article class="panel dash-card">
+                <h2>Imprest issued to each TOM</h2>
+                <table class="mini-table" id="imprest-issued-table" aria-label="Imprest issued to TOM operators">
+                  <thead><tr><th>TOM No.</th><th>Imprest</th><th>Advance</th><th>Total</th></tr></thead><tbody></tbody><tfoot></tfoot>
+                </table>
+                <div class="imprest-total">Total imprest and advance issued · ₹4,100</div>
+              </article>
+              <article class="panel dash-card">
+                <h2>Imprest received</h2>
+                <table class="mini-table" id="imprest-received-table" aria-label="Imprest received from TOM operators">
+                  <thead><tr><th>TOM No.</th><th>Amount received</th></tr></thead><tbody></tbody><tfoot></tfoot>
+                </table>
+              </article>
+            </div>
+            <article class="panel dash-card coins-card">
+              <h2>Coins in hand</h2>
+              <p class="dash-caption">Count coins received from the bank by denomination. The total is added to Cash in possession.</p>
+              <table class="mini-table" id="coins-table" aria-label="Coins received from bank by denomination">
+                <thead><tr><th>Coin denomination</th><th>Count</th><th>Amount</th></tr></thead><tbody></tbody><tfoot></tfoot>
+              </table>
+            </article>
+            <article class="panel dash-card sv2-card">
+              <h2>SV2 records</h2>
+              <p class="dash-caption">Closing balance = opening balance + received − sent − sale. Each day's closing balance carries forward as the next day's opening balance.</p>
+              <div class="table-scroll">
+                <table class="mini-table" id="sv2-table" aria-label="SV2 daily stock records">
+                  <thead><tr><th>Particular</th><th>Opening balance</th><th>Received from revenue / other station</th><th>Sent to revenue</th><th>Sent to other station</th><th>Total sale for the day</th><th>Closing balance</th></tr></thead><tbody></tbody><tfoot></tfoot>
+                </table>
+              </div>
+            </article>
+            <article class="panel dash-card outstanding-card">
+              <h2>Outstanding summary</h2>
+              <p class="dash-caption">AFC is sourced from TOM &amp; CC, TVM is sourced from the TVM register, and Misc is entered manually.</p>
+              <div class="table-scroll">
+                <table class="mini-table" id="outstanding-table" aria-label="Outstanding balances by category">
+                  <thead><tr><th>Outstanding type</th><th>Previous OS</th><th>Current OS</th><th>Paid OS</th><th>Waived-off OS</th><th>Total balance OS</th></tr></thead>
+                  <tbody></tbody>
+                  <tfoot><tr><td>Total</td><td data-outstanding-total="previous">₹0</td><td data-outstanding-total="current">₹0</td><td data-outstanding-total="paid">₹0</td><td data-outstanding-total="waived">₹0</td><td data-outstanding-total="balance" class="outstanding-total">₹0</td></tr></tfoot>
+                </table>
+              </div>
+              <p class="footer">Paid OS and waived-off OS are entered here; other values are calculated from the selected register data.</p>
+            </article>
+          </div>
+          <p class="footer">Cash dashboard cards · example values · reference register operations</p>
+        </section>
+
+        <section class="page" id="page-overview" aria-labelledby="overview-title">
+          <div class="page-head"><div><p class="eyebrow">Saturday · 24 October 2026</p><h1 id="overview-title">Station Overview</h1><p class="subhead">Station totals and current register status.</p></div><span class="date-badge">Selected day · INR · Asia/Kolkata</span></div>
+          <div class="overview-grid">
+            <article class="stat-card"><div class="stat-label">Current AFC earning</div><div class="stat-value">₹ 57,885</div><div class="change up">↑ 8.2% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">Cash-less earning</div><div class="stat-value">₹ 14,400</div><div class="change down">↓ 2.4% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">Total QR sale · TVM + TOM</div><div class="stat-value">₹ 23,300</div><div class="stat-foot">TVM ₹ 11,200 · TOM/CC ₹ 12,100</div><div class="change up">↑ 5.1% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">Total add value · TVM + TOM</div><div class="stat-value">₹ 26,750</div><div class="stat-foot">TVM 86 · TOM/CC 22 transactions</div><div class="change up">↑ 1.8% vs previous day</div></article>
+          </div>
+          <div class="section-row"><h2>Register pages</h2><span class="section-note">Editable registers; final earning is read-only.</span></div>
+          <div class="quick-grid">
+            <article class="panel quick-card" data-open="tom-cc"><strong>TOM &amp; CC Earning</strong><span>Shift register · grouped entry table · calculated totals</span></article>
+            <article class="panel quick-card" data-open="tvm"><strong>TVM Earning</strong><span>Machine register · QR, add value, payments and totals</span></article>
+            <article class="panel quick-card" data-open="final"><strong>Final Earning</strong><span>Read-only combined totals for the selected date</span></article>
+          </div>
+          <div class="section-row"><h2>Historical highlights</h2><a class="nav-link" style="min-height:auto;padding:4px 7px;color:var(--teal)" href="#history" data-page="history">View records →</a></div>
+          <div class="history-grid" data-history="overview"></div>
+        </section>
+
+        <section class="page" id="page-tom-cc" aria-labelledby="tom-title">
+          <div class="page-head"><div><p class="eyebrow"><span data-station-name>Central Metro</span> · Daily register · Editable</p><h1 id="tom-title">TOM &amp; CC Earning Register</h1><p class="subhead">Shift-entry table with grouped columns and calculated register totals.</p></div><span class="date-badge">Business date · 24 Oct 2026</span></div>
+          <div class="table-toolbar"><span class="toolbar-note">Complete TOM &amp; CC register · <span data-row-count="tom">12</span> rows · use the padded horizontal scroller to view every column.</span><button class="primary-button add-row" data-table="tom-table" type="button">＋ Add row</button></div>
+          <p class="table-navigation-note">Keyboard: arrow keys move between cells, Enter moves down, and Tab / Shift+Tab moves through editable cells.</p>
+          <div class="panel table-panel"><div class="table-scroll"><table id="tom-table" aria-label="TOM and CC earning register">
+            <thead>
+              <tr><th rowspan="3">TOM / CC No.</th><th rowspan="3">Operator name</th><th rowspan="3">Shift</th><th colspan="6">QR Tickets</th><th colspan="8">Contactless Smart Card (CSC)</th><th rowspan="3">AFC collection total</th><th rowspan="3">Total earning</th><th colspan="4">Cashless details</th><th rowspan="3">Cash deposited</th></tr>
+              <tr><th colspan="2">QR sale</th><th colspan="2">Paid exit QR</th><th colspan="2">QR refund</th><th colspan="3">CSC sale</th><th colspan="2">Add value · SV2 TOM</th><th colspan="2">Add value · NCMC TOM</th><th colspan="2">Cashless channel</th><th>UPI</th><th>POS</th></tr>
+              <tr><th>Qty</th><th>Amt (a)</th><th>Qty</th><th>Amt (b)</th><th>Qty</th><th>Amt (d)</th><th>SV2/SV6 Qty</th><th>T1/T3 Qty</th><th>Amt (e)</th><th>Qty</th><th>Amt (h1)</th><th>Qty</th><th>Amt (h2)</th><th>CCC / TVM</th><th>TOM / CC</th><th>Amount</th><th>Amount</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><input class="text-cell" value="80" aria-label="TOM or CC number"></td><td><input class="text-cell" value="Operator 1" aria-label="Operator name"></td><td><input value="1" aria-label="Shift"></td><td><input value="148"></td><td><input value="7,250"></td><td><input value="4"></td><td><input value="180"></td><td><input value="2"></td><td><input value="90"></td><td><input value="38"></td><td><input value="12"></td><td><input value="5,400"></td><td><input value="12"></td><td><input value="3,600"></td><td><input value="2"></td><td><input value="600"></td><td class="calc-cell">₹ 16,340</td><td class="calc-cell">₹ 18,240</td><td><input value="1,200"></td><td><input value="850"></td><td><input value="2,100"></td><td><input value="9,800"></td></tr>
+              <tr><td><input class="text-cell" value="81"></td><td><input class="text-cell" value="Operator 2"></td><td><input value="2"></td><td><input value="96"></td><td><input value="4,850"></td><td><input value="2"></td><td><input value="90"></td><td><input value="1"></td><td><input value="45"></td><td><input value="25"></td><td><input value="8"></td><td><input value="3,200"></td><td><input value="7"></td><td><input value="2,100"></td><td><input value="1"></td><td><input value="300"></td><td class="calc-cell">₹ 10,595</td><td class="calc-cell">₹ 11,945</td><td><input value="900"></td><td><input value="500"></td><td><input value="1,600"></td><td><input value="6,300"></td></tr>
+            </tbody>
+            <tfoot><tr><td>Total</td><td></td><td></td><td>244</td><td>₹ 12,100</td><td>6</td><td>₹ 270</td><td>3</td><td>₹ 135</td><td>63</td><td>20</td><td>₹ 8,600</td><td>19</td><td>₹ 5,700</td><td>3</td><td>₹ 900</td><td>₹ 26,935</td><td>₹ 30,185</td><td>₹ 2,100</td><td>₹ 1,350</td><td>₹ 3,700</td><td>₹ 16,100</td></tr></tfoot>
+          </table></div></div>
+          <p class="footer">Register-style grouped headers · editable cells · calculated values · totals row</p>
+        </section>
+
+        <section class="page" id="page-tvm" aria-labelledby="tvm-title">
+          <div class="page-head"><div><p class="eyebrow"><span data-station-name>Central Metro</span> · Machine register · Editable</p><h1 id="tvm-title">TVM Earning Register</h1><p class="subhead">One row per ticket vending machine. Amount totals are calculated from entered values.</p></div><span class="date-badge">Business date · 24 Oct 2026</span></div>
+          <div class="table-toolbar"><span class="toolbar-note"><span data-row-count="tvm">12</span> machine rows · grouped columns follow the earning register.</span><button class="primary-button add-row" data-table="tvm-table" type="button">＋ Add row</button></div>
+          <p class="table-navigation-note">Keyboard: arrow keys move between cells, Enter moves down, and Tab / Shift+Tab moves through editable cells.</p>
+          <div class="panel table-panel"><div class="table-scroll"><table id="tvm-table" aria-label="TVM earning register">
+            <thead><tr><th rowspan="2">TVM No.</th><th colspan="2">QR Sales</th><th colspan="2">Add Value</th><th colspan="2">Add Value NCMC</th><th colspan="2">RCTM Add Value</th><th rowspan="2">Total</th><th colspan="2">Cashless Transaction</th><th rowspan="2">Outstanding<br>(current)</th><th rowspan="2">Final Total</th></tr>
+              <tr><th>Qty</th><th>Amount</th><th>Qty</th><th>Amount</th><th>Qty</th><th>Amount</th><th>Qty</th><th>Amount</th><th>Payment by POS</th><th>Payment by UPI</th></tr></thead>
+            <tbody>
+              <tr><td><input class="text-cell" value="TVM-01" aria-label="TVM number"></td><td><input value="56"></td><td><input value="6,400"></td><td><input value="34"></td><td><input value="8,200"></td><td><input value="12"></td><td><input value="2,400"></td><td><input value="4"></td><td><input value="1,100"></td><td class="calc-cell">₹ 18,100</td><td><input value="1,200"></td><td><input value="2,600"></td><td><input value="800"></td><td class="calc-cell">₹ 13,500</td></tr>
+              <tr><td><input class="text-cell" value="TVM-02"></td><td><input value="41"></td><td><input value="4,800"></td><td><input value="26"></td><td><input value="6,300"></td><td><input value="8"></td><td><input value="1,600"></td><td><input value="2"></td><td><input value="550"></td><td class="calc-cell">₹ 13,250</td><td><input value="900"></td><td><input value="1,900"></td><td><input value="450"></td><td class="calc-cell">₹ 10,000</td></tr>
+            </tbody>
+            <tfoot><tr><td>Total</td><td>97</td><td>₹ 11,200</td><td>60</td><td>₹ 14,500</td><td>20</td><td>₹ 4,000</td><td>6</td><td>₹ 1,650</td><td>₹ 31,350</td><td>₹ 2,100</td><td>₹ 4,500</td><td>₹ 1,250</td><td>₹ 23,500</td></tr></tfoot>
+          </table></div></div>
+          <p class="footer">Editable machine rows · Add row · calculated Total and Final Total · register totals</p>
+        </section>
+
+        <section class="page" id="page-final" aria-labelledby="final-title">
+          <div class="page-head"><div><p class="eyebrow"><span data-station-name>Central Metro</span> · Combined register · Read only</p><h1 id="final-title">Final Earning Register</h1><p class="subhead">Totals from TOM &amp; CC Earning and TVM Earning for the selected date.</p></div><span class="date-badge">Business date · 24 Oct 2026</span></div>
+          <div class="read-only-banner">Read-only view · final values are calculated from the two earning registers and cannot be edited here.</div>
+          <div class="panel table-panel"><div class="table-scroll"><table id="final-table" aria-label="Read-only final earning summary">
+            <thead>
+              <tr><th rowspan="3">Particulars</th><th colspan="4">QR Sale</th><th colspan="2">Paid Exit QR</th><th colspan="2">QR Refund</th><th colspan="3">CSC Sale / Refund</th><th colspan="4">Add Value</th><th colspan="4">Payment Channels</th><th rowspan="3">Surcharge</th><th rowspan="3">Total AFC Earning</th></tr>
+              <tr><th colspan="2">TOM &amp; CC</th><th colspan="2">TVM</th><th rowspan="2">Qty</th><th rowspan="2">Amt</th><th rowspan="2">Qty</th><th rowspan="2">Amt</th><th>CSC sale</th><th>Sale cancel</th><th>Refund</th><th colspan="2">SV2 / CSC</th><th colspan="2">NCMC</th><th>TVM UPI</th><th>TOM/CC UPI</th><th>POS</th><th>CC UPI</th></tr>
+              <tr><th>Qty</th><th>Amt</th><th>Qty</th><th>Amt</th><th>Amt</th><th>Amt</th><th>Amt</th><th>Qty</th><th>Amt</th><th>Qty</th><th>Amt</th><th>Amount</th><th>Amount</th><th>Amount</th><th>Amount</th></tr>
+            </thead>
+            <tbody><tr><td><strong>Total</strong></td><td>244</td><td>₹ 12,100</td><td>97</td><td>₹ 11,200</td><td>6</td><td>₹ 270</td><td>3</td><td>₹ 135</td><td>₹ 8,600</td><td>₹ 900</td><td>₹ 180</td><td>60</td><td>₹ 14,500</td><td>20</td><td>₹ 4,000</td><td>₹ 4,500</td><td>₹ 3,700</td><td>₹ 3,450</td><td>₹ 2,100</td><td>₹ 1,850</td><td class="calc-cell">₹ 1,24,850</td></tr></tbody>
+          </table></div></div>
+          <p class="footer">Final table is a read-only roll-up of register rows for the selected date.</p>
+        </section>
+
+        <section class="page" id="page-statistics" aria-labelledby="statistics-title">
+          <div class="page-head"><div><p class="eyebrow">Station totals</p><h1 id="statistics-title">Statistics</h1><p class="subhead">Daily figures calculated from TOM/CC and TVM register entries.</p></div><span class="date-badge">Selected day · 24 Oct 2026</span></div>
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-label">Current AFC earning</div><div class="stat-value">₹ 57,885</div><div class="change up">↑ 8.2% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">Cash-less earning</div><div class="stat-value">₹ 14,400</div><div class="change down">↓ 2.4% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">TVM QR sale</div><div class="stat-value">97 / ₹ 11,200</div><div class="stat-foot">Quantity / amount</div><div class="change up">↑ 6.3% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">TOM/CC QR sale</div><div class="stat-value">244 / ₹ 12,100</div><div class="stat-foot">Quantity / amount</div><div class="change up">↑ 4.2% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">TVM add value</div><div class="stat-value">86 / ₹ 20,150</div><div class="stat-foot">Quantity / amount</div><div class="change up">↑ 1.2% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">TOM add value</div><div class="stat-value">22 / ₹ 6,600</div><div class="stat-foot">Quantity / amount</div><div class="change down">↓ 0.8% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">Total QR sale · TVM + TOM</div><div class="stat-value">341 / ₹ 23,300</div><div class="change up">↑ 5.1% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">Total add value · TVM + TOM</div><div class="stat-value">108 / ₹ 26,750</div><div class="change up">↑ 1.8% vs previous day</div></article>
+            <article class="stat-card"><div class="stat-label">TOM UPI</div><div class="stat-value">₹ 3,700</div></article>
+            <article class="stat-card"><div class="stat-label">TVM UPI</div><div class="stat-value">₹ 4,500</div></article>
+            <article class="stat-card"><div class="stat-label">TOM POS</div><div class="stat-value">₹ 2,100</div></article>
+            <article class="stat-card"><div class="stat-label">CC UPI</div><div class="stat-value">₹ 2,100</div></article>
+          </div>
+        </section>
+
+        <section class="page" id="page-history" aria-labelledby="history-title">
+          <div class="page-head"><div><p class="eyebrow">Records by calendar month</p><h1 id="history-title">Historical Records</h1><p class="subhead">Monthly and all-time earning records, each with the date recorded.</p></div><span class="date-badge">October 2026</span></div>
+          <div class="history-grid" data-history="records"></div>
+        </section>
+
+        <section class="page" id="page-support" aria-labelledby="support-title">
+          <div class="page-head"><div><p class="eyebrow">Help &amp; guidance</p><h1 id="support-title">Support</h1><p class="subhead">Help for station register entry, local storage, and synchronization.</p></div></div>
+          <article class="panel support-panel"><h2>Using the earning registers</h2><p>Enter TOM &amp; CC and TVM figures in their own editable tables. Review the calculated totals in the read-only Final Earning page for the selected business date.</p><div class="support-callout">Offline entries are stored in this browser's IndexedDB. The application will show synchronization status when the station server is configured.</div><p>Support contact details can be added when provided.</p></article>
+        </section>
+        <div class="footer">Design preview only · example figures · no data is stored or synchronized by this prototype</div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const navLinks = [...document.querySelectorAll("[data-page]")];
+    const pages = [...document.querySelectorAll(".page")];
+    const breadcrumb = document.querySelector("#breadcrumb");
+    function openPage(pageName) {
+      pages.forEach(page => page.classList.toggle("active", page.id === `page-${pageName}`));
+      navLinks.forEach(link => link.classList.toggle("active", link.dataset.page === pageName));
+      breadcrumb.textContent = document.querySelector(`.nav-list [data-page="${pageName}"] .nav-text`)?.textContent.trim() || "Station Overview";
+    }
+    navLinks.forEach(link => link.addEventListener("click", event => {
+      event.preventDefault();
+      openPage(link.dataset.page);
+    }));
+    document.querySelectorAll("[data-open]").forEach(card => card.addEventListener("click", () => openPage(card.dataset.open)));
+    document.querySelector("#theme-toggle").addEventListener("click", () => document.body.classList.toggle("dark"));
+
+    const text = (fieldKey, label) => ({ fieldKey, label, kind: "text" });
+    const number = (fieldKey, label) => ({ fieldKey, label, kind: "number" });
+    const calculated = (fieldKey, label, formula) => ({ fieldKey, label, kind: "calculated", formula });
+    const group = (label, ...children) => ({ label, children });
+    const quantityAmount = (quantityKey, amountKey, amountCode) => [
+      number(quantityKey, "Qty"), number(amountKey, `Amt (${amountCode})`)
+    ];
+    const sumFields = (row, keys) => keys.split(" ").reduce((total, key) => total + parseNumber(row[key]), 0);
+    const parseNumber = value => Number.parseFloat(String(value ?? "").replace(/[^0-9.-]/g, "")) || 0;
+
+    const ticketSaleNet = row =>
+      sumFields(row, "qrSaleAmount paidExitQrAmount cscSaleAmount") -
+      sumFields(row, "qrRefundAmount cscSaleCancelAmount cscRefundAmount");
+    const addValueNet = row =>
+      sumFields(row, "addValueSv2TomAmount addValueNcmcTomAmount") - parseNumber(row.addValueCancelAmount);
+    const surchargeTotal = row =>
+      sumFields(row, "surchargeCashAmount surchargePurseAmount ncmcCashAmount ncmcPurseAmount");
+    const penaltyTotal = row =>
+      sumFields(row, "manualPenaltyAmount hhtPenaltyCashAmount hhtPenaltyPurseAmount");
+    const afcCollectionTotal = row => ticketSaleNet(row) + addValueNet(row) + surchargeTotal(row);
+    const totalEarning = row =>
+      afcCollectionTotal(row) +
+      sumFields(row, "eibAmount sv4TopUpAmount miscEarningAmount parkingManualCash parkingHhtCash parkingHhtPurse manualPenaltyAmount hhtPenaltyCashAmount hhtPenaltyPurseAmount") -
+      sumFields(row, "readableCscRefundAmount tourCardRefundAmount securityDepositRefundAmount manualQrRefundAmount");
+    const cashlessTotal = row =>
+      sumFields(row, "posAtCcc posAtTvm staticQrAtCcc posAtRctm posAtScvm upiAtTvm upiAtTomCc hhtPenaltyPurseCashless hhtParkingPurse");
+    const cashDepositedByOperator = row =>
+      totalEarning(row) - cashlessTotal(row) -
+      sumFields(row, "surchargeThroughPurseAfc surchargeThroughPurseNcmc outstandingCurrentAfc outstandingCurrentMisc") +
+      sumFields(row, "outsourceEarningAmount outstandingPaidAfc outstandingPaidMisc");
+
+    const tomColumns = [
+      text("cccNumber", "CCC/TOM/RCTM/SCVM No."), text("operatorName", "Name of Operator"),
+      text("employeeNumber", "Employee No."), text("shiftStartTime", "Start of Shift Time"),
+      text("shiftEndTime", "End of Shift Time"), text("shiftNumber", "Shift No."),
+      group("QR Tickets",
+        group("QR Tickets Sale", number("freeExitQuantity", "Free Exit Qty"), ...quantityAmount("qrSaleQuantity", "qrSaleAmount", "a")),
+        group("Paid Exit QR", ...quantityAmount("paidExitQrQuantity", "paidExitQrAmount", "b")),
+        group("QR Refund", ...quantityAmount("qrRefundQuantity", "qrRefundAmount", "d"))),
+      group("Contactless Smart Card (CSC)",
+        group("CSC Sale (TOM/CCC)", number("cscSaleSv2Sv6Quantity", "SV-2 & SV-6 Qty"), number("cscSaleT1T3Quantity", "T-1 & T-3 Qty"), number("cscSaleAmount", "Total Amt (e)")),
+        group("CSC Sale Cancel", ...quantityAmount("cscSaleCancelQuantity", "cscSaleCancelAmount", "f")),
+        group("CSC Refund", number("cscRefundSv2Quantity", "SV-2 Qty"), number("cscRefundT1T3Quantity", "T-1 & T-3 Qty"), number("cscRefundAmount", "Amt (g)")),
+        group("Add Value",
+          group("SV2 TOM", ...quantityAmount("addValueSv2TomQuantity", "addValueSv2TomAmount", "h1")),
+          group("NCMC TOM", ...quantityAmount("addValueNcmcTomQuantity", "addValueNcmcTomAmount", "h2"))),
+        group("Add Value Cancel", ...quantityAmount("addValueCancelQuantity", "addValueCancelAmount", "i"))),
+      group("Surcharge (CCC)",
+        group("By Cash/Cashless (other than Purse)", ...quantityAmount("surchargeCashQuantity", "surchargeCashAmount", "j")),
+        group("By Purse using AFC System", ...quantityAmount("surchargePurseQuantity", "surchargePurseAmount", "k")),
+        group("NCMC through Cash/POS/QR", ...quantityAmount("ncmcCashQuantity", "ncmcCashAmount", "NC1")),
+        group("NCMC through Purse", ...quantityAmount("ncmcPurseQuantity", "ncmcPurseAmount", "NC2"))),
+      calculated("afcCollectionTotal", "Total Collection by AFC System (X)", afcCollectionTotal),
+      number("eibAmount", "E.I.B. (n)"),
+      group("Top-up in SV-4 Cards (o)", ...quantityAmount("sv4TopUpQuantity", "sv4TopUpAmount", "o")),
+      group("Refund Readable CSC (CR)", ...quantityAmount("readableCscRefundQuantity", "readableCscRefundAmount", "r")),
+      group("Manual Refund of Tour Card", ...quantityAmount("tourCardRefundQuantity", "tourCardRefundAmount", "s1")),
+      group("Manual Refund of Security Deposit", ...quantityAmount("securityDepositRefundQuantity", "securityDepositRefundAmount", "s2")),
+      group("Penalty",
+        group("Manual Receipt Penalty", ...quantityAmount("manualPenaltyQuantity", "manualPenaltyAmount", "t")),
+        group("HHT Penalty (Cash)", ...quantityAmount("hhtPenaltyCashQuantity", "hhtPenaltyCashAmount", "u")),
+        group("HHT Penalty (Purse)", ...quantityAmount("hhtPenaltyPurseQuantity", "hhtPenaltyPurseAmount", "v"))),
+      number("miscEarningAmount", "Miscellaneous Earning (w)"),
+      group("Manual Refund (if any) QR", ...quantityAmount("manualQrRefundQuantity", "manualQrRefundAmount", "x")),
+      group("Parking (Y)", number("parkingManualCash", "Manual Cash (y1)"), number("parkingHhtCash", "HHT Cash (y2)"), number("parkingHhtPurse", "HHT Purse (y3)")),
+      calculated("totalEarning", "Total Earning (Z)", totalEarning),
+      group("Cashless Details (CD)",
+        number("posAtCcc", "POS at CCC (aa1)"), number("posAtTvm", "POS at TVM (ab1)"), number("staticQrAtCcc", "Static QR at CCC (ac)"),
+        number("posAtRctm", "POS at RCTM (ad)"), number("posAtScvm", "POS at SCVM (ae)"), number("upiAtTvm", "UPI at TVM (ab2)"),
+        number("upiAtTomCc", "UPI at TOM/CC (aa2)"), number("hhtPenaltyPurseCashless", "HHT Penalty Purse (af)"), number("hhtParkingPurse", "HHT Parking Purse (w4)"),
+        group("Surcharge Adjustment", number("surchargeThroughPurseAfc", "Through Purse by AFC at CCC (ag)"), number("surchargeThroughPurseNcmc", "Through purse in NCMC by AFC at CCC (ah)"))),
+      number("outsourceEarningAmount", "Outsource Earning (OE)"),
+      group("Outstanding Details",
+        group("Current", number("outstandingCurrentAfc", "AFC (aj)"), number("outstandingCurrentMisc", "Misc (ak)"), number("tvmMutilatedFakeNotes", "TVM Mutilated/Fake Notes")),
+        group("Paid", number("outstandingPaidAfc", "AFC (al)"), number("outstandingPaidMisc", "Misc (am)"))),
+      calculated("cashDepositedByOperator", "Total Cash Deposited by Operator", cashDepositedByOperator),
+    ];
+
+    const tvmTotal = row => sumFields(row, "tvmQrSaleAmount tvmAddValueAmount tvmNcmcAddValueAmount tvmRctmAddValueAmount");
+    const tvmFinalTotal = row => tvmTotal(row) - sumFields(row, "tvmPaymentByPos tvmPaymentByUpi tvmOutstandingCurrent");
+    const tvmColumns = [
+      text("tvmNumber", "TVM No."),
+      group("QR Sales", number("tvmQrSaleQuantity", "Qty"), number("tvmQrSaleAmount", "Amount")),
+      group("Add Value", number("tvmAddValueQuantity", "Qty"), number("tvmAddValueAmount", "Amount")),
+      group("Add Value NCMC", number("tvmNcmcAddValueQuantity", "Qty"), number("tvmNcmcAddValueAmount", "Amount")),
+      group("RCTM Add Value", number("tvmRctmAddValueQuantity", "Qty"), number("tvmRctmAddValueAmount", "Amount")),
+      calculated("tvmTotal", "Total", tvmTotal),
+      group("Cashless Transaction", number("tvmPaymentByPos", "Payment by POS"), number("tvmPaymentByUpi", "Payment by UPI")),
+      number("tvmOutstandingCurrent", "Outstanding (current)"),
+      calculated("tvmFinalTotal", "Final Total", tvmFinalTotal),
+    ];
+
+    const totalAfcEarning = row =>
+      afcCollectionTotal(row) + sumFields(row, "tvmQrSaleAmount tvmAddValueAmount tvmNcmcAddValueAmount tvmRctmAddValueAmount");
+    const finalColumns = [
+      text("finalRowLabel", "Particulars"),
+      group("QR Sale",
+        group("Shift QR Sale", number("qrSaleQuantity", "Qty"), number("qrSaleAmount", "Amt")),
+        group("TVM QR Sale", number("tvmQrSaleQuantity", "Qty"), number("tvmQrSaleAmount", "Amt"))),
+      group("Paid Exit QR", number("paidExitQrQuantity", "Qty"), number("paidExitQrAmount", "Amt")),
+      group("QR Refund", number("qrRefundQuantity", "Qty"), number("qrRefundAmount", "Amt")),
+      group("CSC Sale / Refund", number("cscSaleAmount", "Sale Amt"), number("cscSaleCancelAmount", "Cancel Amt"), number("cscRefundAmount", "Refund Amt")),
+      group("Add Value CSC",
+        group("Shift SV2 TOM", number("addValueSv2TomQuantity", "Qty"), number("addValueSv2TomAmount", "Amt")),
+        group("TVM", number("tvmAddValueQuantity", "Qty"), number("tvmAddValueAmount", "Amt"))),
+      group("Add Value NCMC",
+        group("Shift NCMC TOM", number("addValueNcmcTomQuantity", "Qty"), number("addValueNcmcTomAmount", "Amt")),
+        group("TVM", number("tvmNcmcAddValueQuantity", "Qty"), number("tvmNcmcAddValueAmount", "Amt"))),
+      group("RCTM Add Value", group("TVM", number("tvmRctmAddValueQuantity", "Qty"), number("tvmRctmAddValueAmount", "Amt"))),
+      group("Add Value Cancel", number("addValueCancelQuantity", "Qty"), number("addValueCancelAmount", "Amt")),
+      calculated("surchargeTotal", "Surcharge", surchargeTotal),
+      calculated("totalAfcEarning", "Total AFC earning", totalAfcEarning),
+    ];
+
+    const tomRows = [
+      { cccNumber: "80", operatorName: "Operator 1", employeeNumber: "00001", shiftStartTime: "06:00", shiftEndTime: "14:00", shiftNumber: "1", qrSaleQuantity: "148", qrSaleAmount: "7250", paidExitQrQuantity: "4", paidExitQrAmount: "180", qrRefundQuantity: "2", qrRefundAmount: "90", cscSaleSv2Sv6Quantity: "38", cscSaleT1T3Quantity: "12", cscSaleAmount: "5400", cscSaleCancelQuantity: "2", cscSaleCancelAmount: "600", addValueSv2TomQuantity: "12", addValueSv2TomAmount: "3600", addValueNcmcTomQuantity: "2", addValueNcmcTomAmount: "600", posAtCcc: "1200", posAtTvm: "500", upiAtTomCc: "2100", upiAtTvm: "4500", outstandingCurrentAfc: "800", miscEarningAmount: "900" },
+      { cccNumber: "81", operatorName: "Operator 2", employeeNumber: "00002", shiftStartTime: "14:00", shiftEndTime: "22:00", shiftNumber: "2", qrSaleQuantity: "96", qrSaleAmount: "4850", paidExitQrQuantity: "2", paidExitQrAmount: "90", qrRefundQuantity: "1", qrRefundAmount: "45", cscSaleSv2Sv6Quantity: "25", cscSaleT1T3Quantity: "8", cscSaleAmount: "3200", cscSaleCancelQuantity: "1", cscSaleCancelAmount: "300", addValueSv2TomQuantity: "7", addValueSv2TomAmount: "2100", addValueNcmcTomQuantity: "1", addValueNcmcTomAmount: "300", posAtCcc: "900", posAtTvm: "400", upiAtTomCc: "1600", upiAtTvm: "3200", outstandingCurrentAfc: "450", miscEarningAmount: "500" },
+      ...Array.from({ length: 10 }, () => ({})),
+    ];
+    const tvmRows = [
+      { tvmNumber: "TVM-01", tvmQrSaleQuantity: "56", tvmQrSaleAmount: "6400", tvmAddValueQuantity: "34", tvmAddValueAmount: "8200", tvmNcmcAddValueQuantity: "12", tvmNcmcAddValueAmount: "2400", tvmRctmAddValueQuantity: "4", tvmRctmAddValueAmount: "1100", tvmPaymentByPos: "1200", tvmPaymentByUpi: "2600", tvmOutstandingCurrent: "800" },
+      { tvmNumber: "TVM-02", tvmQrSaleQuantity: "41", tvmQrSaleAmount: "4800", tvmAddValueQuantity: "26", tvmAddValueAmount: "6300", tvmNcmcAddValueQuantity: "8", tvmNcmcAddValueAmount: "1600", tvmRctmAddValueQuantity: "2", tvmRctmAddValueAmount: "550", tvmPaymentByPos: "900", tvmPaymentByUpi: "1900", tvmOutstandingCurrent: "450" },
+      ...Array.from({ length: 10 }, () => ({})),
+    ];
+    const stationName = "Central Metro";
+    const sv2OpeningBalances = [1200, 100, 15, 50, 500];
+    const sv2Particulars = ["SV2", "Manual refunded card", "Tour card refunded", "Other", "Souvenir tokens"];
+    const sv2DailyRecords = new Map([["2026-10-24", [
+      { received: 300, sentRevenue: 0, sentOther: 50, sale: 245 },
+      { received: 20, sentRevenue: 0, sentOther: 0, sale: 5 },
+      { received: 0, sentRevenue: 0, sentOther: 0, sale: 2 },
+      { received: 0, sentRevenue: 0, sentOther: 0, sale: 3 },
+      { received: 100, sentRevenue: 0, sentOther: 0, sale: 80 },
+    ]]]);
+    const sv2ZeroMovement = () => sv2Particulars.map(() => ({ received: 0, sentRevenue: 0, sentOther: 0, sale: 0 }));
+    const cashState = {
+      previousDaysCash: 32450,
+      sentToBank: 0,
+      bankDenominations: [{ value: 500, count: 50 }, { value: 200, count: 25 }, { value: 100, count: 24 }],
+      possessionDenominations: [{ value: 500, count: 150 }, { value: 200, count: 30 }, { value: 100, count: 20 }, { value: 50, count: 6 }, { value: 20, count: 3 }, { value: 10, count: 2 }],
+      coinDenominations: [{ value: 1, count: 20 }, { value: 2, count: 25 }, { value: 5, count: 20 }, { value: 10, count: 10 }, { value: 20, count: 5 }],
+      imprestIssued: [
+        { tom: "80", imprest: 500, advance: 1200 },
+        { tom: "81", imprest: 500, advance: 900 },
+        { tom: "82", imprest: 0, advance: 600 },
+        { tom: "83", imprest: 0, advance: 400 },
+      ],
+      imprestReceived: [{ tom: "80", amount: 1200 }, { tom: "81", amount: 900 }, { tom: "82", amount: 600 }, { tom: "83", amount: 900 }],
+    };
+    const outstandingState = {
+      previous: { afc: 1200, tvm: 500, misc: 0 },
+      miscCurrent: 350,
+      paid: { afc: 0, tvm: 0, misc: 0 },
+      waived: { afc: 0, tvm: 0, misc: 0 },
+    };
+    const historicalRecords = [
+      { date: "2026-10-18", earning: 318640 },
+      { date: "2026-10-04", earning: 176220 },
+      { date: "2026-08-14", earning: 342810 },
+      { date: "2026-07-08", earning: 142300 },
+      { date: "2025-12-27", earning: 129820 },
+    ];
+    const previousDayMetrics = {
+      "Current AFC earning": 53490,
+      "Cash-less earning": 14750,
+      "Total QR sale · TVM + TOM": 22275,
+      "TVM QR sale": 10537,
+      "TOM/CC QR sale": 11612,
+      "TVM add value": 19912,
+      "TOM add value": 6653,
+      "Total add value · TVM + TOM": 26301,
+    };
+    const dateInput = document.querySelector(".date-input");
+
+    const leaves = nodes => nodes.flatMap(node => node.children ? leaves(node.children) : [node]);
+    const depth = node => node.children ? 1 + Math.max(...node.children.map(depth)) : 1;
+    const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+    const formatNumber = value => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(value);
+    const formatRupees = value => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
+    const isQuantity = column => /quantity|qty/i.test(`${column.fieldKey} ${column.label}`);
+    const formatCellValue = (column, value) => isQuantity(column) ? formatNumber(value) : formatRupees(value);
+    const sumRows = (rows, formula) => rows.reduce((sum, row) => sum + formula(row), 0);
+
+    function renderOutstandingTable() {
+      const table = document.querySelector("#outstanding-table");
+      const rows = [
+        { key: "afc", label: "AFC · TOM & CC", previous: outstandingState.previous.afc, current: sumRows(tomRows, row => parseNumber(row.outstandingCurrentAfc)) },
+        { key: "tvm", label: "TVM", previous: outstandingState.previous.tvm, current: sumRows(tvmRows, row => parseNumber(row.tvmOutstandingCurrent)) },
+        { key: "misc", label: "Misc · manual input", previous: outstandingState.previous.misc, current: outstandingState.miscCurrent },
+      ];
+      const totals = { previous: 0, current: 0, paid: 0, waived: 0, balance: 0 };
+      table.tBodies[0].innerHTML = rows.map(row => {
+        const paid = parseNumber(outstandingState.paid[row.key]);
+        const waived = parseNumber(outstandingState.waived[row.key]);
+        const balance = row.previous + row.current - paid - waived;
+        totals.previous += row.previous;
+        totals.current += row.current;
+        totals.paid += paid;
+        totals.waived += waived;
+        totals.balance += balance;
+        const currentCell = row.key === "misc"
+          ? `<input class="outstanding-input" data-misc-current inputmode="decimal" aria-label="Misc current outstanding" value="${escapeHtml(outstandingState.miscCurrent)}">`
+          : formatRupees(row.current);
+        return `<tr><td>${row.label}</td><td>${formatRupees(row.previous)}</td><td>${currentCell}</td><td><input class="outstanding-input" data-paid="${row.key}" inputmode="decimal" aria-label="${row.label} paid outstanding" value="${escapeHtml(outstandingState.paid[row.key])}"></td><td><input class="outstanding-input" data-waived="${row.key}" inputmode="decimal" aria-label="${row.label} waived-off outstanding" value="${escapeHtml(outstandingState.waived[row.key])}"></td><td class="outstanding-total">${formatRupees(balance)}</td></tr>`;
+      }).join("");
+      Object.entries(totals).forEach(([key, value]) => {
+        table.querySelector(`[data-outstanding-total="${key}"]`).textContent = formatRupees(value);
+      });
+      const rerenderAfterPaidUpdate = input => {
+        if (input.dataset.paid) {
+          outstandingState.paid[input.dataset.paid] = input.value;
+          renderCashDashboard();
+        } else if (input.dataset.waived) {
+          outstandingState.waived[input.dataset.waived] = input.value;
+        } else {
+          outstandingState.miscCurrent = input.value;
+        }
+        renderOutstandingTable();
+      };
+      table.querySelectorAll("[data-misc-current], [data-paid], [data-waived]").forEach(input => {
+        input.addEventListener("change", () => rerenderAfterPaidUpdate(input));
+      });
+    }
+
+    function shiftIsoDate(date, offset) {
+      const shifted = new Date(`${date}T00:00:00Z`);
+      shifted.setUTCDate(shifted.getUTCDate() + offset);
+      return shifted.toISOString().slice(0, 10);
+    }
+
+    function getSv2Day(date) {
+      if (!sv2DailyRecords.has(date)) sv2DailyRecords.set(date, sv2ZeroMovement());
+      return sv2DailyRecords.get(date);
+    }
+
+    function getSv2OpeningBalance(date, rowIndex) {
+      const firstRecordDate = "2026-10-24";
+      if (date < firstRecordDate) return 0;
+      if (date === firstRecordDate) return sv2OpeningBalances[rowIndex];
+      const previousDate = shiftIsoDate(date, -1);
+      const previousMovement = getSv2Day(previousDate)[rowIndex];
+      const previousOpening = getSv2OpeningBalance(previousDate, rowIndex);
+      return previousOpening + parseNumber(previousMovement.received) - parseNumber(previousMovement.sentRevenue) -
+        parseNumber(previousMovement.sentOther) - parseNumber(previousMovement.sale);
+    }
+
+    function renderSv2Table() {
+      const table = document.querySelector("#sv2-table");
+      const date = dateInput.value;
+      const movements = getSv2Day(date);
+      const totals = { opening: 0, received: 0, sentRevenue: 0, sentOther: 0, sale: 0, closing: 0 };
+      table.tBodies[0].innerHTML = sv2Particulars.map((particular, index) => {
+        const movement = movements[index];
+        const opening = getSv2OpeningBalance(date, index);
+        const closing = opening + parseNumber(movement.received) - parseNumber(movement.sentRevenue) -
+          parseNumber(movement.sentOther) - parseNumber(movement.sale);
+        totals.opening += opening;
+        totals.received += parseNumber(movement.received);
+        totals.sentRevenue += parseNumber(movement.sentRevenue);
+        totals.sentOther += parseNumber(movement.sentOther);
+        totals.sale += parseNumber(movement.sale);
+        totals.closing += closing;
+        const input = (field, label) =>
+          `<input class="outstanding-input" data-sv2-row="${index}" data-sv2-field="${field}" inputmode="numeric" aria-label="${escapeHtml(particular)} ${label}" value="${escapeHtml(movement[field])}">`;
+        return `<tr><td>${escapeHtml(particular)}</td><td>${formatNumber(opening)}</td><td>${input("received", "received from revenue or other station")}</td><td>${input("sentRevenue", "sent to revenue")}</td><td>${input("sentOther", "sent to other station")}</td><td>${input("sale", "total sale for the day")}</td><td class="outstanding-total">${formatNumber(closing)}</td></tr>`;
+      }).join("");
+      table.tFoot.innerHTML = `<tr><td>Total</td><td>${formatNumber(totals.opening)}</td><td>${formatNumber(totals.received)}</td><td>${formatNumber(totals.sentRevenue)}</td><td>${formatNumber(totals.sentOther)}</td><td>${formatNumber(totals.sale)}</td><td class="outstanding-total">${formatNumber(totals.closing)}</td></tr>`;
+      table.querySelectorAll("[data-sv2-field]").forEach(input => input.addEventListener("change", () => {
+        movements[Number(input.dataset.sv2Row)][input.dataset.sv2Field] = input.value;
+        renderSv2Table();
+      }));
+    }
+
+    function renderCashDashboard() {
+      const stationNodes = document.querySelectorAll("[data-station-name]");
+      stationNodes.forEach(node => { node.textContent = stationName; });
+      const currentDayEarning = sumRows(tomRows, totalEarning) + sumRows(tvmRows, tvmFinalTotal);
+      const advanceReceived = cashState.imprestReceived.reduce((sum, row) => sum + parseNumber(row.amount), 0);
+      const paidOutstanding = Object.values(outstandingState.paid).reduce((sum, value) => sum + parseNumber(value), 0);
+      const cashOnHand = cashState.previousDaysCash + currentDayEarning + advanceReceived + paidOutstanding;
+      const bankTotal = cashState.bankDenominations.reduce((sum, row) => sum + row.value * row.count, 0);
+      const dueToBank = Math.max(0, Math.floor(cashState.previousDaysCash / 100) * 100 - cashState.sentToBank);
+      const issuedImprest = cashState.imprestIssued.reduce((sum, row) => sum + row.imprest + row.advance, 0);
+      const coinsFromBank = cashState.coinDenominations.reduce((sum, row) => sum + row.value * row.count, 0);
+      const possessionTotal = cashState.possessionDenominations.reduce((sum, row) => sum + row.value * row.count, 0) + coinsFromBank + issuedImprest;
+      const possessionTable = document.querySelector("#possession-table");
+      const cashValues = {
+        previousDaysCash: cashState.previousDaysCash,
+        currentDayEarning,
+        advanceReceived,
+        paidOutstanding,
+        sentToBank: cashState.sentToBank,
+        dueToBank,
+      };
+      document.querySelector("[data-cash-total]").textContent = formatRupees(cashOnHand);
+      Object.entries(cashValues).forEach(([key, value]) => {
+        document.querySelector(`[data-cash-value="${key}"]`).textContent = formatRupees(value);
+      });
+
+      const bankTable = document.querySelector("#bank-table");
+      bankTable.tBodies[0].innerHTML = cashState.bankDenominations.map((row, index) =>
+        `<tr><td>${formatRupees(row.value)} note</td><td><input class="outstanding-input" data-bank-count="${index}" inputmode="numeric" aria-label="${row.value} rupee notes for bank" value="${row.count}"></td><td>${formatRupees(row.value * row.count)}</td></tr>`
+      ).join("");
+      bankTable.tFoot.innerHTML = `<tr><td colspan="2">Total entered</td><td>${formatRupees(bankTotal)}</td></tr>`;
+      bankTable.querySelectorAll("[data-bank-count]").forEach(input => input.addEventListener("change", () => {
+        cashState.bankDenominations[Number(input.dataset.bankCount)].count = parseNumber(input.value);
+        renderCashDashboard();
+      }));
+      const bankStatus = document.querySelector("[data-bank-status]");
+      if (cashState.sentToBank > 0 && bankTotal === cashState.sentToBank) {
+        bankStatus.textContent = `✓ Sent ${formatRupees(cashState.sentToBank)} · remaining due ${formatRupees(dueToBank)}`;
+      } else if (bankTotal === dueToBank) {
+        bankStatus.textContent = "✓ Matches amount due";
+      } else {
+        bankStatus.textContent = `Difference · ${formatRupees(Math.abs(dueToBank - bankTotal))}`;
+      }
+      document.querySelector("[data-send-bank]").onclick = () => {
+        cashState.sentToBank += bankTotal;
+        renderCashDashboard();
+      };
+
+      possessionTable.tBodies[0].innerHTML = cashState.possessionDenominations.map((row, index) =>
+        `<tr><td>${formatRupees(row.value)} notes</td><td><input class="outstanding-input" data-possession-count="${index}" inputmode="numeric" aria-label="${row.value} rupee notes in possession" value="${row.count}"></td><td>${formatRupees(row.value * row.count)}</td></tr>`
+      ).join("") + `<tr><td>Coins received from bank</td><td>—</td><td>${formatRupees(coinsFromBank)}</td></tr><tr><td>Imprest issued</td><td>—</td><td>${formatRupees(issuedImprest)}</td></tr>`;
+      possessionTable.tFoot.innerHTML = `<tr><td colspan="2">Total in possession</td><td>${formatRupees(possessionTotal)}</td></tr>`;
+      possessionTable.querySelectorAll("[data-possession-count]").forEach(input => input.addEventListener("change", () => {
+        cashState.possessionDenominations[Number(input.dataset.possessionCount)].count = parseNumber(input.value);
+        renderCashDashboard();
+      }));
+      document.querySelector("[data-possession-status]").textContent = possessionTotal === cashOnHand
+        ? "✓ Matches cash on hand"
+        : `Difference from cash on hand · ${formatRupees(Math.abs(possessionTotal - cashOnHand))}`;
+
+      const coinsTable = document.querySelector("#coins-table");
+      coinsTable.tBodies[0].innerHTML = cashState.coinDenominations.map((row, index) =>
+        `<tr><td>${formatRupees(row.value)} coin</td><td><input class="outstanding-input" data-coin-count="${index}" inputmode="numeric" aria-label="${row.value} rupee coins received from bank" value="${row.count}"></td><td>${formatRupees(row.value * row.count)}</td></tr>`
+      ).join("");
+      coinsTable.tFoot.innerHTML = `<tr><td colspan="2">Total coins received from bank</td><td>${formatRupees(coinsFromBank)}</td></tr>`;
+      coinsTable.querySelectorAll("[data-coin-count]").forEach(input => input.addEventListener("change", () => {
+        cashState.coinDenominations[Number(input.dataset.coinCount)].count = parseNumber(input.value);
+        renderCashDashboard();
+      }));
+
+      const issuedTable = document.querySelector("#imprest-issued-table");
+      issuedTable.tBodies[0].innerHTML = cashState.imprestIssued.map((row, index) =>
+        `<tr><td>${escapeHtml(row.tom)}</td><td><input class="outstanding-input" data-issued-imprest="${index}" inputmode="decimal" aria-label="Imprest issued to TOM ${escapeHtml(row.tom)}" value="${row.imprest}"></td><td><input class="outstanding-input" data-issued-advance="${index}" inputmode="decimal" aria-label="Advance to TOM ${escapeHtml(row.tom)}" value="${row.advance}"></td><td>${formatRupees(row.imprest + row.advance)}</td></tr>`
+      ).join("");
+      issuedTable.tFoot.innerHTML = `<tr><td>Total</td><td>${formatRupees(cashState.imprestIssued.reduce((sum, row) => sum + row.imprest, 0))}</td><td>${formatRupees(cashState.imprestIssued.reduce((sum, row) => sum + row.advance, 0))}</td><td>${formatRupees(issuedImprest)}</td></tr>`;
+      issuedTable.querySelectorAll("[data-issued-imprest], [data-issued-advance]").forEach(input => input.addEventListener("change", () => {
+        const row = cashState.imprestIssued[Number(input.dataset.issuedImprest ?? input.dataset.issuedAdvance)];
+        if (input.hasAttribute("data-issued-imprest")) row.imprest = parseNumber(input.value);
+        else row.advance = parseNumber(input.value);
+        renderCashDashboard();
+      }));
+      document.querySelector(".imprest-total").textContent = `Total imprest and advance issued · ${formatRupees(issuedImprest)}`;
+
+      const receivedTable = document.querySelector("#imprest-received-table");
+      receivedTable.tBodies[0].innerHTML = cashState.imprestReceived.map((row, index) =>
+        `<tr><td>${escapeHtml(row.tom)}</td><td><input class="outstanding-input" data-received="${index}" inputmode="decimal" aria-label="Amount received from TOM ${escapeHtml(row.tom)}" value="${row.amount}"></td></tr>`
+      ).join("");
+      receivedTable.tFoot.innerHTML = `<tr><td>Total received</td><td>${formatRupees(advanceReceived)}</td></tr>`;
+      receivedTable.querySelectorAll("[data-received]").forEach(input => input.addEventListener("change", () => {
+        cashState.imprestReceived[Number(input.dataset.received)].amount = parseNumber(input.value);
+        renderCashDashboard();
+      }));
+    }
+
+    function renderSummaryCards() {
+      const tomQrQuantity = sumRows(tomRows, row => parseNumber(row.qrSaleQuantity));
+      const tomQrAmount = sumRows(tomRows, row => parseNumber(row.qrSaleAmount));
+      const tvmQrQuantity = sumRows(tvmRows, row => parseNumber(row.tvmQrSaleQuantity));
+      const tvmQrAmount = sumRows(tvmRows, row => parseNumber(row.tvmQrSaleAmount));
+      const tomAddQuantity = sumRows(tomRows, row => parseNumber(row.addValueSv2TomQuantity) + parseNumber(row.addValueNcmcTomQuantity));
+      const tomAddAmount = sumRows(tomRows, row => parseNumber(row.addValueSv2TomAmount) + parseNumber(row.addValueNcmcTomAmount));
+      const tvmAddQuantity = sumRows(tvmRows, row => parseNumber(row.tvmAddValueQuantity) + parseNumber(row.tvmNcmcAddValueQuantity) + parseNumber(row.tvmRctmAddValueQuantity));
+      const tvmAddAmount = sumRows(tvmRows, row => parseNumber(row.tvmAddValueAmount) + parseNumber(row.tvmNcmcAddValueAmount) + parseNumber(row.tvmRctmAddValueAmount));
+      const currentAfc = sumRows(tomRows, afcCollectionTotal) + sumRows(tvmRows, tvmTotal);
+      const cashless = sumRows(tomRows, cashlessTotal) + sumRows(tvmRows, row => parseNumber(row.tvmPaymentByPos) + parseNumber(row.tvmPaymentByUpi));
+      const qrCombined = tvmQrAmount + tomQrAmount;
+      const tvmAddCombined = tvmAddAmount;
+      const tomAddCombined = tomAddAmount;
+      const addCombined = tvmAddAmount + tomAddAmount;
+      const values = {
+        "Current AFC earning": formatRupees(currentAfc),
+        "Cash-less earning": formatRupees(cashless),
+        "Total QR sale · TVM + TOM": `${formatNumber(tvmQrQuantity + tomQrQuantity)} / ${formatRupees(qrCombined)}`,
+        "TVM QR sale": `${formatNumber(tvmQrQuantity)} / ${formatRupees(tvmQrAmount)}`,
+        "TOM/CC QR sale": `${formatNumber(tomQrQuantity)} / ${formatRupees(tomQrAmount)}`,
+        "TVM add value": `${formatNumber(tvmAddQuantity)} / ${formatRupees(tvmAddCombined)}`,
+        "TOM add value": `${formatNumber(tomAddQuantity)} / ${formatRupees(tomAddCombined)}`,
+        "Total add value · TVM + TOM": `${formatNumber(tvmAddQuantity + tomAddQuantity)} / ${formatRupees(addCombined)}`,
+        "TOM UPI": formatRupees(sumRows(tomRows, row => parseNumber(row.upiAtTomCc))),
+        "TVM UPI": formatRupees(sumRows(tomRows, row => parseNumber(row.upiAtTvm)) + sumRows(tvmRows, row => parseNumber(row.tvmPaymentByUpi))),
+        "TOM POS": formatRupees(sumRows(tomRows, row => parseNumber(row.posAtCcc) + parseNumber(row.posAtTvm) + parseNumber(row.posAtRctm) + parseNumber(row.posAtScvm))),
+        "CC UPI": formatRupees(sumRows(tomRows, row => parseNumber(row.upiAtTomCc))),
+      };
+      const comparableValues = {
+        "Current AFC earning": currentAfc,
+        "Cash-less earning": cashless,
+        "Total QR sale · TVM + TOM": qrCombined,
+        "TVM QR sale": tvmQrAmount,
+        "TOM/CC QR sale": tomQrAmount,
+        "TVM add value": tvmAddCombined,
+        "TOM add value": tomAddCombined,
+        "Total add value · TVM + TOM": addCombined,
+      };
+      document.querySelectorAll(".stat-card").forEach(card => {
+        const label = card.querySelector(".stat-label")?.textContent.trim();
+        if (values[label]) card.querySelector(".stat-value").textContent = values[label];
+        const change = card.querySelector(".change");
+        const previous = previousDayMetrics[label];
+        if (change && previous > 0 && comparableValues[label] !== undefined) {
+          const percent = ((comparableValues[label] - previous) / previous) * 100;
+          change.classList.toggle("up", percent >= 0);
+          change.classList.toggle("down", percent < 0);
+          change.textContent = `${percent >= 0 ? "↑" : "↓"} ${Math.abs(percent).toFixed(1)}% vs previous day`;
+        }
+      });
+      renderHistoryCards();
+    }
+
+    function renderHistoryCards() {
+      const current = { date: dateInput.value, earning: sumRows(tomRows, totalEarning) + sumRows(tvmRows, tvmFinalTotal) };
+      const records = [...historicalRecords.filter(row => row.date !== current.date), current];
+      const month = current.date.slice(0, 7);
+      const monthly = records.filter(row => row.date.startsWith(month));
+      const highestMonth = monthly.reduce((best, row) => row.earning > best.earning ? row : best);
+      const lowestMonth = monthly.reduce((best, row) => row.earning < best.earning ? row : best);
+      const highestAll = records.reduce((best, row) => row.earning > best.earning ? row : best);
+      const lowestAll = records.reduce((best, row) => row.earning < best.earning ? row : best);
+      const dateLabel = date => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${date}T12:00:00`));
+      const card = (label, row) => `<article class="history-card"><div class="history-label">${label}</div><div class="history-value">${formatRupees(row.earning)}</div><div class="history-date">${dateLabel(row.date)}</div></article>`;
+      document.querySelector('[data-history="overview"]').innerHTML =
+        card("Highest earning · this month", highestMonth) +
+        card("Highest earning · all time", highestAll) +
+        card("Lowest earning · this month", lowestMonth);
+      document.querySelector('[data-history="records"]').innerHTML =
+        card("Highest earning · this month", highestMonth) +
+        card("Lowest earning · this month", lowestMonth) +
+        card("Highest earning · all time", highestAll) +
+        card("Lowest earning · all time", lowestAll);
+    }
+
+    function buildTableHead(columns) {
+      const headerCount = Math.max(...columns.map(depth));
+      const headerRows = Array.from({ length: headerCount }, () => []);
+      function addHeaders(nodes, level) {
+        nodes.forEach(node => {
+          if (node.children) {
+            headerRows[level].push(`<th colspan="${leaves([node]).length}">${escapeHtml(node.label)}</th>`);
+            addHeaders(node.children, level + 1);
+          } else {
+            headerRows[level].push(`<th rowspan="${headerCount - level}">${escapeHtml(node.label)}</th>`);
+          }
+        });
+      }
+      addHeaders(columns, 0);
+      return `<thead>${headerRows.map(row => `<tr>${row.join("")}</tr>`).join("")}</thead>`;
+    }
+
+    function renderTable(tableId, columns, rows, editable, showTotals = true, footerOnly = false) {
+      const table = document.querySelector(`#${tableId}`);
+      const columnLeaves = leaves(columns);
+      const bodyRows = footerOnly ? "" : rows.map((row, rowIndex) => `<tr>${columnLeaves.map(column => {
+        const value = column.kind === "calculated" ? column.formula(row) : row[column.fieldKey] ?? "";
+        if (!editable) {
+          return `<td class="${column.kind === "calculated" ? "calc-cell" : ""}">${column.kind === "calculated" || column.kind === "number" ? formatCellValue(column, parseNumber(value)) : escapeHtml(value)}</td>`;
+        }
+        if (column.kind === "calculated") return `<td class="calc-cell">${formatRupees(value)}</td>`;
+        const inputMode = column.kind === "number" ? "decimal" : "text";
+        return `<td><input data-row="${rowIndex}" data-field="${column.fieldKey}" inputmode="${inputMode}" aria-label="${escapeHtml(column.label)}" value="${escapeHtml(value)}" class="${column.kind === "text" ? "text-cell" : ""}"></td>`;
+      }).join("")}</tr>`).join("");
+      const footer = showTotals ? `<tfoot><tr>${columnLeaves.map((column, index) => {
+        if (index === 0) return "<td>Total</td>";
+        if (column.kind === "text") return "<td></td>";
+        const total = rows.reduce((sum, row) => sum + (column.kind === "calculated" ? column.formula(row) : parseNumber(row[column.fieldKey])), 0);
+        return `<td>${formatCellValue(column, total)}</td>`;
+      }).join("")}</tr></tfoot>` : "";
+      table.innerHTML = `${buildTableHead(columns)}<tbody>${bodyRows}</tbody>${footer}`;
+      if (editable) {
+        table.querySelectorAll("input").forEach(input => input.addEventListener("change", () => {
+          rows[Number(input.dataset.row)][input.dataset.field] = input.value;
+          renderAllTables();
+        }));
+      }
+    }
+
+    function buildFinalRow() {
+      const row = { finalRowLabel: "Total" };
+      [...tomRows, ...tvmRows].forEach(sourceRow => {
+        Object.entries(sourceRow).forEach(([key, value]) => {
+          if (key !== "finalRowLabel" && value !== "") row[key] = (Number(row[key]) || 0) + parseNumber(value);
+        });
+      });
+      return row;
+    }
+
+    function renderAllTables() {
+      renderTable("tom-table", tomColumns, tomRows, true);
+      renderTable("tvm-table", tvmColumns, tvmRows, true);
+      renderTable("final-table", finalColumns, [buildFinalRow()], false, true, true);
+      document.querySelector('[data-row-count="tom"]').textContent = tomRows.length;
+      document.querySelector('[data-row-count="tvm"]').textContent = tvmRows.length;
+      renderCashDashboard();
+      renderOutstandingTable();
+      renderSv2Table();
+      renderSummaryCards();
+    }
+    renderAllTables();
+    document.addEventListener("keydown", event => {
+      const input = event.target instanceof HTMLElement ? event.target.closest("tbody input") : null;
+      const table = input?.closest("table");
+      if (!input || !table) return;
+      const key = event.key;
+      const isTab = key === "Tab";
+      const isHorizontal = key === "ArrowLeft" || key === "ArrowRight";
+      const isVertical = key === "ArrowUp" || key === "ArrowDown" || key === "Enter";
+      if (!isTab && !isHorizontal && !isVertical) return;
+
+      const rows = [...table.tBodies[0].rows];
+      const currentRow = input.closest("tr");
+      const currentRowIndex = rows.indexOf(currentRow);
+      const currentColumnIndex = input.closest("td").cellIndex;
+      let nextPosition = null;
+      let externalTarget = null;
+
+      if (isTab) {
+        const focusable = [...document.querySelectorAll("a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex='-1'])")]
+          .filter(element => element.getClientRects().length > 0);
+        const currentIndex = focusable.indexOf(input);
+        const nextElement = focusable[currentIndex + (event.shiftKey ? -1 : 1)];
+        if (nextElement) {
+          if (nextElement.closest("table") === table) {
+            const nextInput = nextElement;
+            nextPosition = {
+              row: rows.indexOf(nextInput.closest("tr")),
+              column: nextInput.closest("td").cellIndex,
+            };
+          } else {
+            externalTarget = nextElement;
+          }
+        } else {
+          return;
+        }
+      } else if (isHorizontal) {
+        const cells = [...table.querySelectorAll("tbody input")];
+        const index = cells.indexOf(input);
+        const nextInput = cells[index + (key === "ArrowRight" ? 1 : -1)];
+        if (nextInput) {
+          nextPosition = {
+            row: rows.indexOf(nextInput.closest("tr")),
+            column: nextInput.closest("td").cellIndex,
+          };
+        }
+      } else {
+        const direction = key === "ArrowUp" || (key === "Enter" && event.shiftKey) ? -1 : 1;
+        const candidates = rows.flatMap((row, rowIndex) => [...row.querySelectorAll("input")].map(candidate => ({
+          element: candidate,
+          row: rowIndex,
+          column: candidate.closest("td").cellIndex,
+        }))).filter(candidate => direction < 0
+          ? candidate.row < currentRowIndex
+          : candidate.row > currentRowIndex);
+        candidates.sort((left, right) =>
+          Math.abs(left.row - currentRowIndex) - Math.abs(right.row - currentRowIndex) ||
+          Math.abs(left.column - currentColumnIndex) - Math.abs(right.column - currentColumnIndex));
+        if (candidates[0]) nextPosition = { row: candidates[0].row, column: candidates[0].column };
+      }
+
+      if (!nextPosition && !externalTarget) {
+        if (!isTab) event.preventDefault();
+        return;
+      }
+
+      event.preventDefault();
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      if (externalTarget) {
+        externalTarget.focus();
+        return;
+      }
+      const refreshedRows = [...table.tBodies[0].rows];
+      const targetCell = refreshedRows[nextPosition.row]?.cells[nextPosition.column];
+      targetCell?.querySelector("input")?.focus();
+    });
+    document.querySelectorAll(".add-row").forEach(button => button.addEventListener("click", () => {
+      if (button.dataset.table === "tom-table") tomRows.push({});
+      else tvmRows.push({});
+      renderAllTables();
+    }));
+    dateInput.addEventListener("change", () => {
+      const selected = new Date(`${dateInput.value}T12:00:00`);
+      if (Number.isNaN(selected.getTime())) return;
+      const label = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(selected);
+      document.querySelectorAll(".date-badge").forEach(badge => {
+        if (badge.textContent.includes("Business date")) badge.textContent = `Business date · ${label}`;
+        else if (badge.textContent.includes("Selected day")) badge.textContent = `Selected day · ${label} · INR · Asia/Kolkata`;
+        else if (/^[A-Z][a-z]+ 20\d\d$/.test(badge.textContent.trim())) badge.textContent = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(selected);
+      });
+      renderSv2Table();
+      renderHistoryCards();
+    });
+  </script>
+</body>
+</html>
